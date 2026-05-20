@@ -1,0 +1,123 @@
+{% extends "admin/base_site.html" %}
+
+{% block content %}
+  <form method="get" style="margin-bottom: 24px; padding: 16px; background: #fff; border: 1px solid #ddd; border-radius: 8px;">
+    <div style="font-weight: 700; margin-bottom: 12px;">Select sources to scrape</div>
+    
+    <div style="margin-bottom: 12px;">
+      <button type="button" id="check-all-sources">Check all</button>
+      <button type="button" id="uncheck-all-sources">Uncheck all</button>
+    </div>
+
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 12px; margin-bottom: 18px;">
+      {% for source in sources %}
+        <label style="display: flex; gap: 10px; align-items: start; padding: 10px; border: 1px solid #ddd; border-radius: 6px; background: #fafafa;">
+          <input
+            type="checkbox"
+            name="source_ids"
+            value="{{ source.id }}"
+            {% if source.id in selected_ids %}checked{% endif %}
+          >
+          <span>
+            <div><strong>{{ source.name }}</strong></div>
+            <div style="color: #555;">{{ source.extractor_key }}</div>
+            <div style="color: #777; font-size: 12px;">{{ source.url }}</div>
+          </span>
+        </label>
+      {% endfor %}
+    </div>
+
+    <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+      <button type="submit" name="action" value="preview">Run Preview</button>
+      <button type="submit" name="action" value="import">Run Import</button>
+    </div>
+  </form>
+
+  {% if scrape_result %}
+    <div style="margin-bottom: 24px; padding: 16px; background: #fff; border: 1px solid #ddd; border-radius: 8px;">
+      <div style="font-weight: 700; margin-bottom: 12px;">Run Summary</div>
+      <div>Preview only: {{ scrape_result.preview_only }}</div>
+      <div>Scrape run ID: {{ scrape_result.scrape_run_id|default:"Not created" }}</div>
+    </div>
+
+    <div style="margin-bottom: 24px;">
+      {% for result in scrape_result.results %}
+        <div style="margin-bottom: 20px; padding: 16px; background: #fff; border: 1px solid #ddd; border-radius: 8px;">
+          <div style="display: flex; justify-content: space-between; gap: 12px; align-items: center; margin-bottom: 10px;">
+            <div>
+              <strong>{{ result.source_name }}</strong>
+              <span style="color: #666;">— {{ result.extractor_key }}</span>
+            </div>
+            <div>
+              {% if result.success %}
+                <span style="color: #166534; font-weight: 700;">Success</span>
+              {% else %}
+                <span style="color: #b91c1c; font-weight: 700;">Failed</span>
+              {% endif %}
+            </div>
+          </div>
+
+          <div style="margin-bottom: 10px;">
+            Event count: {{ result.event_count }}
+          </div>
+
+          {% if result.error %}
+            <div style="margin-bottom: 12px; color: #b91c1c;">
+              {{ result.error }}
+            </div>
+          {% endif %}
+
+          {% if result.metadata %}
+            <details style="margin-bottom: 12px;">
+              <summary><strong>Metadata</strong></summary>
+              <pre style="white-space: pre-wrap; background: #f7f7f7; padding: 12px; border-radius: 6px;">{{ result.metadata }}</pre>
+            </details>
+          {% endif %}
+
+          {% if result.events %}
+            <details>
+              <summary><strong>Preview Events</strong></summary>
+              <div style="margin-top: 12px;">
+                {% for event in result.events %}
+                  <div style="margin-bottom: 10px; padding: 10px; border: 1px solid #eee; border-radius: 6px; background: #fcfcfc;">
+                    <div><strong>{{ event.title }}</strong></div>
+                    <div style="color: #444;">{{ event.start }}</div>
+                    <div style="color: #444;">
+                      {{ event.location|default:event.venue }}
+                      {% if event.city %} — {{ event.city }}{% endif %}
+                      {% if event.state %}, {{ event.state }}{% endif %}
+                    </div>
+                    <div style="color: #666; font-size: 12px;">Likely relevant: {{ event.likely_relevant }}</div>
+                    <div style="color: #666; font-size: 12px;">Fingerprint: {{ event.fingerprint_source }}</div>
+                  </div>
+                {% endfor %}
+              </div>
+            </details>
+          {% endif %}
+        </div>
+      {% endfor %}
+    </div>
+  {% endif %}
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    const checkAllButton = document.getElementById("check-all-sources");
+    const uncheckAllButton = document.getElementById("uncheck-all-sources");
+
+    function setSourceCheckboxes(checked) {
+      document
+        .querySelectorAll('input[name="source_ids"]')
+        .forEach(function (checkbox) {
+          checkbox.checked = checked;
+        });
+    }
+
+    checkAllButton?.addEventListener("click", function () {
+      setSourceCheckboxes(true);
+    });
+
+    uncheckAllButton?.addEventListener("click", function () {
+      setSourceCheckboxes(false);
+    });
+  });
+</script>
+{% endblock %}

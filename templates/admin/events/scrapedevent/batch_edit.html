@@ -1,0 +1,47 @@
+{% extends "admin/base_site.html" %}
+
+{% block content %}
+  <h1>{{ title }}</h1>
+
+  <p>{{ queryset|length }} event(s) selected.</p>
+
+  <form method="post">
+    {% csrf_token %}
+
+    {% for obj in queryset %}
+      <input type="hidden" name="_selected_action" value="{{ obj.pk }}">
+    {% endfor %}
+
+    <input type="hidden" name="action" value="batch_edit_events">
+    <input type="hidden" name="apply" value="1">
+
+    <fieldset class="module aligned">
+      <div class="form-row">
+        {{ form.city.label_tag }} {{ form.city }}
+      </div>
+      <div class="form-row">
+        {{ form.state.label_tag }} {{ form.state }}
+      </div>
+      <div class="form-row">
+        {{ form.venue.label_tag }} {{ form.venue }}
+      </div>
+      <div class="form-row">
+        {{ form.location.label_tag }} {{ form.location }}
+      </div>
+      <div class="form-row">
+        {{ form.start_datetime.label_tag }} {{ form.start_datetime }}
+      </div>
+      <div class="form-row">
+        {{ form.end_datetime.label_tag }} {{ form.end_datetime }}
+      </div>
+      <div class="form-row">
+        {{ form.mark_reviewed.label_tag }} {{ form.mark_reviewed }}
+      </div>
+    </fieldset>
+
+    <div class="submit-row">
+      <input type="submit" value="Apply changes" class="default">
+      <a href=".." class="button cancel-link">Cancel</a>
+    </div>
+  </form>
+{% endblock %}

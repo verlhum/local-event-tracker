@@ -1,0 +1,25 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.env
+
+# Django/local database
+db.sqlite3
+events.db
+*.sqlite3
+
+# Generated files
+media/
+staticfiles/
+logs/
+*.log
+
+# Local/system files
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/

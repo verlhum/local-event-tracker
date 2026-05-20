@@ -1,0 +1,50 @@
+{% extends "admin/change_list.html" %}
+
+{% block object-tools %}
+<div style="margin-bottom: 12px; padding: 12px; background: #f8f8f8; border: 1px solid #ddd;">
+    <form method="get" style="display: flex; gap: 12px; align-items: end; flex-wrap: wrap;">
+        <div>
+            <label for="event_start_date"><strong>Start date</strong></label><br>
+            <input
+                type="date"
+                id="event_start_date"
+                name="event_start_date"
+                value="{{ event_start_date }}"
+            >
+        </div>
+
+        <div>
+            <label for="event_end_date"><strong>End date</strong></label><br>
+            <input
+                type="date"
+                id="event_end_date"
+                name="event_end_date"
+                value="{{ event_end_date }}"
+            >
+        </div>
+
+        {% for key, value in request.GET.items %}
+            {% if key != "event_start_date" and key != "event_end_date" %}
+                <input type="hidden" name="{{ key }}" value="{{ value }}">
+            {% endif %}
+        {% endfor %}
+
+        <div>
+            <button type="submit" class="button">Apply date filter</button>
+            <a href="?" class="button">Current week</a>
+        </div>
+    </form>
+</div>
+
+{{ block.super }}
+{% endblock %}
+
+{% block object-tools-items %}
+  <li>
+    <a href="{% url 'events_scrape' %}">Scrape Sources</a>
+  </li>
+  <li>
+    <a href="{% url 'events_export' %}">Export Events</a>
+  </li>
+  {{ block.super }}
+{% endblock %}

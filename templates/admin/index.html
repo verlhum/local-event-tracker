@@ -1,0 +1,14 @@
+{% extends "admin/base_site.html" %}
+{% load i18n static %}
+
+{% block content %}
+  <div style="margin-bottom: 24px; padding: 16px; background: #fff; border: 1px solid #ddd; border-radius: 8px;">
+    <h2 style="margin-top: 0;">Event Tools</h2>
+    <ul style="margin: 0; padding-left: 20px;">
+      <li><a href="{% url 'events_scrape' %}">Scrape Sources</a></li>
+      <li><a href="{% url 'events_export' %}">Export Events</a></li>
+    </ul>
+  </div>
+
+  {{ block.super }}
+{% endblock %}

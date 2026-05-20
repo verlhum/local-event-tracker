@@ -1,0 +1,90 @@
+{% extends "admin/base_site.html" %}
+
+{% block content %}
+  <form method="get" style="margin-bottom: 24px; padding: 16px; background: #fff; border: 1px solid #ddd; border-radius: 8px;">
+    <div style="display: flex; gap: 20px; flex-wrap: wrap; align-items: end;">
+      <div>
+        <label for="type"><strong>Export Type</strong></label><br>
+        <select id="type" name="type">
+          <option value="week" {% if export_type == "week" %}selected{% endif %}>Full Week</option>
+          <option value="monday" {% if export_type == "monday" %}selected{% endif %}>Monday Post</option>
+          <option value="thursday" {% if export_type == "thursday" %}selected{% endif %}>Thursday Post</option>
+        </select>
+      </div>
+
+      <div>
+        <label for="date"><strong>Week Date</strong></label><br>
+        <input type="date" id="date" name="date" value="{{ selected_date }}">
+      </div>
+
+      <div>
+        <label for="day_font_size"><strong>Image Day Size</strong></label><br>
+        <input type="number" id="day_font_size" name="day_font_size" min="20" max="100" value="{{ day_font_size }}">
+      </div>
+
+      <div>
+        <label for="event_font_size"><strong>Image Event Size</strong></label><br>
+        <input type="number" id="event_font_size" name="event_font_size" min="16" max="72" value="{{ event_font_size }}">
+      </div>
+
+      <div>
+        <button type="submit" name="action" value="preview_image">Preview Image</button>
+      </div>
+
+      <div>
+        <button type="submit" name="action" value="save_image">Save Image</button>
+      </div>
+
+      <div>
+        <button type="submit">Refresh Text Only</button>
+      </div>
+    </div>
+  </form>
+
+  {% if image_url %}
+    <div style="margin-bottom: 28px;">
+      <h2>Rendered Image Preview</h2>
+      <div style="margin-bottom: 10px;">
+        <strong>{{ week_label }}</strong>
+      </div>
+      <div style="background: #f6f6f6; padding: 16px; border: 1px solid #ddd; border-radius: 8px;">
+        <img src="{{ image_url }}" alt="Rendered events image" style="max-width: 100%; height: auto; display: block;">
+      </div>
+      {% if image_path %}
+        <div style="margin-top: 10px; color: #555;">
+          Saved to: {{ image_path }}
+        </div>
+      {% endif %}
+
+      {% if shrink_report %}
+        <div style="margin-top: 14px; padding: 12px; background: #fff; border: 1px solid #ddd; border-radius: 8px;">
+          <div style="font-weight: 700; margin-bottom: 8px;">Image Size Report</div>
+
+          {% if shrink_report.auto_shrink_applied %}
+            <div style="color: #b45309; font-weight: 700; margin-bottom: 8px;">
+              Auto-shrink was applied.
+            </div>
+          {% else %}
+            <div style="color: #166534; font-weight: 700; margin-bottom: 8px;">
+              No auto-shrink was needed.
+            </div>
+          {% endif %}
+
+          <div>Day font size: {{ shrink_report.requested_day_font_size }} → {{ shrink_report.final_day_font_size }}</div>
+          <div>Event font size: {{ shrink_report.requested_event_font_size }} → {{ shrink_report.final_event_font_size }}</div>
+          <div>Time font size: {{ shrink_report.requested_time_font_size }} → {{ shrink_report.final_time_font_size }}</div>
+        </div>
+      {% endif %}
+    </div>
+  {% endif %}
+
+  <div style="margin-top: 32px;">
+    <h2 style="margin-bottom: 12px;">Plain Text Fallback</h2>
+
+    <textarea
+      id="formatted_text"
+      readonly
+      style="width: 100%; min-height: 300px; font-family: Consolas, monospace; white-space: pre;"
+    >{{ formatted_text }}</textarea>
+  </div>
+{% endblock %}
