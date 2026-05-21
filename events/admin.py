@@ -281,10 +281,38 @@ class ScrapedEventAdmin(admin.ModelAdmin):
         "batch_edit_events",
     ]
     
+    custom_date_filter_params = ("event_start_date", "event_end_date")
+    
+    def changelist_view(self, request, extra_context=None):
+        start_date, end_date = self.get_date_range_from_request(request)
+    
+        # Store parsed dates on the request so get_queryset can use them.
+        request._event_start_date = start_date
+        request._event_end_date = end_date
+    
+        # Remove custom params before Django admin's ChangeList processes GET.
+        # Otherwise admin may treat event_start_date/event_end_date as invalid model lookups.
+        cleaned_get = request.GET.copy()
+        for param in self.custom_date_filter_params:
+            cleaned_get.pop(param, None)
+    
+        request.GET = cleaned_get
+        request.META["QUERY_STRING"] = cleaned_get.urlencode()
+    
+        extra_context = extra_context or {}
+        extra_context["event_start_date"] = start_date.isoformat()
+        extra_context["event_end_date"] = end_date.isoformat()
+    
+        return super().changelist_view(request, extra_context=extra_context)
+    
     def get_queryset(self, request):
         qs = super().get_queryset(request)
     
-        start_date, end_date = self.get_date_range(request)
+        start_date = getattr(request, "_event_start_date", None)
+        end_date = getattr(request, "_event_end_date", None)
+    
+        if start_date is None or end_date is None:
+            start_date, end_date = self.get_date_range_from_request(request)
     
         if start_date:
             qs = qs.filter(start_datetime__date__gte=start_date)
@@ -294,24 +322,12 @@ class ScrapedEventAdmin(admin.ModelAdmin):
     
         return qs
     
-    def changelist_view(self, request, extra_context=None):
-        start_date, end_date = self.get_date_range(request)
-    
-        extra_context = extra_context or {}
-        extra_context["event_start_date"] = start_date.isoformat()
-        extra_context["event_end_date"] = end_date.isoformat()
-    
-        return super().changelist_view(request, extra_context=extra_context)
-    
-    def get_date_range(self, request):
+    def get_date_range_from_request(self, request):
         start_param = request.GET.get("event_start_date")
         end_param = request.GET.get("event_end_date")
     
         start_date = parse_date(start_param) if start_param else None
         end_date = parse_date(end_param) if end_param else None
-    
-        if start_date and end_date:
-            return start_date, end_date
     
         today = timezone.localdate()
         monday = today - timedelta(days=today.weekday())
