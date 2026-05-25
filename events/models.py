@@ -1,6 +1,18 @@
 from django.db import models
 from django.utils import timezone
 
+from django.core.exceptions import ValidationError
+
+WEEKDAY_CHOICES = [
+    (0, "Monday"),
+    (1, "Tuesday"),
+    (2, "Wednesday"),
+    (3, "Thursday"),
+    (4, "Friday"),
+    (5, "Saturday"),
+    (6, "Sunday"),
+]
+
 class TimeStampedModel(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -47,7 +59,8 @@ class ManualRecurringEvent(TimeStampedModel):
 
     RECURRENCE_CHOICES = [
         ("weekly", "Weekly"),
-        ("monthly_nth_weekday", "Monthly nth weekday"),
+        ("monthly_weekday", "Monthly by weekday"),
+        ("weekly_interval", "Every X weeks"),
     ]
 
     title = models.CharField(max_length=255)
@@ -61,14 +74,30 @@ class ManualRecurringEvent(TimeStampedModel):
     source_page = models.URLField(blank=True)
     notes = models.TextField(blank=True)
 
-    recurrence_type = models.CharField(max_length=50, choices=RECURRENCE_CHOICES)
+    recurrence_type = models.CharField(
+        max_length=50,
+        choices=RECURRENCE_CHOICES,
+        default="weekly",
+    )
     weekday = models.IntegerField(
-        help_text="0=Monday, 6=Sunday", null=True, blank=True
+        choices=WEEKDAY_CHOICES,
+        help_text="Day of week.",
+        null=True,
+        blank=True,
     )
     week_of_month = models.IntegerField(
         null=True,
         blank=True,
-        help_text="1,2,3,4 or -1 for last. Only used for monthly_nth_weekday.",
+        help_text="1,2,3,4 or -1 for last. Only used for Monthly by weekday.",
+    )
+    interval_weeks = models.PositiveIntegerField(
+        default=1,
+        help_text="Used only for 'Every X weeks'. Example: 2 means every other week.",
+    )
+    anchor_date = models.DateField(
+        null=True,
+        blank=True,
+        help_text="Used for 'Every X weeks'. This date controls the recurrence rhythm.",
     )
 
     start_time = models.TimeField()
@@ -83,6 +112,68 @@ class ManualRecurringEvent(TimeStampedModel):
 
     def __str__(self):
         return self.title
+    
+    def clean(self):
+        super().clean()
+    
+        if self.weekday is not None and self.weekday not in range(0, 7):
+            raise ValidationError({
+                "weekday": "Weekday must be 0=Monday through 6=Sunday."
+            })
+    
+        if self.end_date and self.start_date and self.end_date < self.start_date:
+            raise ValidationError({
+                "end_date": "End date cannot be before start date."
+            })
+    
+        if self.recurrence_type == "weekly":
+            if self.weekday is None:
+                raise ValidationError({
+                    "weekday": "Weekday is required for weekly recurring events."
+                })
+    
+        if self.recurrence_type == "monthly_weekday":
+            if self.weekday is None:
+                raise ValidationError({
+                    "weekday": "Weekday is required for monthly-by-weekday recurring events."
+                })
+    
+            if self.week_of_month is None:
+                raise ValidationError({
+                    "week_of_month": "Week of month is required for monthly-by-weekday recurring events."
+                })
+    
+            if self.week_of_month not in [1, 2, 3, 4, -1]:
+                raise ValidationError({
+                    "week_of_month": "Use 1, 2, 3, 4, or -1 for last."
+                })
+    
+        if self.recurrence_type == "weekly_interval":
+            if self.weekday is None:
+                raise ValidationError({
+                    "weekday": "Weekday is required for every-X-weeks recurring events."
+                })
+    
+            if not self.interval_weeks or self.interval_weeks < 1:
+                raise ValidationError({
+                    "interval_weeks": "Interval weeks must be 1 or greater."
+                })
+    
+            if not self.anchor_date:
+                raise ValidationError({
+                    "anchor_date": "Anchor date is required for every-X-weeks recurring events."
+                })
+    
+            if self.anchor_date and self.weekday is not None:
+                if self.anchor_date.weekday() != self.weekday:
+                    raise ValidationError({
+                        "anchor_date": "Anchor date must match the selected weekday."
+                    })
+    
+            if self.start_date and self.anchor_date and self.anchor_date < self.start_date:
+                raise ValidationError({
+                    "anchor_date": "Anchor date should be on or after the start date."
+                })
 
 
 class RecurringException(TimeStampedModel):

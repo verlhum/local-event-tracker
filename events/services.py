@@ -82,7 +82,8 @@ def _is_recurring_event_active_for_date(
     Determine whether a recurring rule should generate an occurrence on current_date.
     Supports:
       - weekly
-      - monthly_nth_weekday
+      - monthly_weekday
+      - weekly_interval
     """
     if recurring_event.status != "active":
         return False
@@ -99,7 +100,32 @@ def _is_recurring_event_active_for_date(
             and current_date.weekday() == recurring_event.weekday
         )
 
-    if recurring_event.recurrence_type == "monthly_nth_weekday":
+    if recurring_event.recurrence_type == "weekly_interval":
+        if recurring_event.weekday is None:
+            return False
+
+        if recurring_event.anchor_date is None:
+            return False
+
+        if not recurring_event.interval_weeks or recurring_event.interval_weeks < 1:
+            return False
+
+        if current_date.weekday() != recurring_event.weekday:
+            return False
+
+        days_since_anchor = (current_date - recurring_event.anchor_date).days
+
+        if days_since_anchor < 0:
+            return False
+
+        if days_since_anchor % 7 != 0:
+            return False
+
+        weeks_since_anchor = days_since_anchor // 7
+
+        return weeks_since_anchor % recurring_event.interval_weeks == 0
+
+    if recurring_event.recurrence_type == "monthly_weekday":
         if recurring_event.weekday is None or recurring_event.week_of_month is None:
             return False
 
@@ -444,3 +470,4 @@ def get_current_monday_post_events(reference_date: date):
 
 def get_current_thursday_post_events(reference_date: date):
     return filter_events_for_thursday_post(get_week_events(reference_date))
+
