@@ -88,7 +88,7 @@ class ManualRecurringEvent(TimeStampedModel):
     week_of_month = models.IntegerField(
         null=True,
         blank=True,
-        help_text="1,2,3,4 or -1 for last. Only used for Monthly by weekday.",
+        help_text="1,2,3,4,5 or -1 for last. Only used for Monthly by weekday.",
     )
     interval_weeks = models.PositiveIntegerField(
         default=1,
@@ -143,9 +143,9 @@ class ManualRecurringEvent(TimeStampedModel):
                     "week_of_month": "Week of month is required for monthly-by-weekday recurring events."
                 })
     
-            if self.week_of_month not in [1, 2, 3, 4, -1]:
+            if self.week_of_month not in [1, 2, 3, 4, 5, -1]:
                 raise ValidationError({
-                    "week_of_month": "Use 1, 2, 3, 4, or -1 for last."
+                    "week_of_month": "Use 1, 2, 3, 4, 5, or -1 for last."
                 })
     
         if self.recurrence_type == "weekly_interval":
